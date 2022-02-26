@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+    <head>
+        <meta charset="utf-8">
+        <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+        <title></title>
+    </head>
+    <body>
+        <div id="root">
+            <div class="model is-active" v-show="isVisible" style="padding-top: 50px;">
+                <div class="modal-background"></div>
+                <div class="modal-card">
+                  <header class="modal-card-head">
+                    <p class="modal-card-title">Update</p>
+
+                    <button class="delete" aria-label="close" @click="closeModal"></button>
+                  </header>
+                  <section class="modal-card-body">
+                    <p>Name: <input v-model="updatedName"/></p>
+                    <p>Course: <input v-model="updatedCourse"/></p>
+                  </section>
+                  <footer class="modal-card-foot">
+                    <button class="button is-success" @click="changeStudent">Save changes</button>
+                    <button class="button" @click="closeModal">Cancel</button>
+                  </footer>
+                </div>
+            </div>
+            <div v-show="showResults">
+                <div v-for="(result,index) in results">
+                    <p>{{ result.name }} - {{ result.course }}
+                        <span @click="updateUser(index)">VIEW</span>
+                        <span @click="deleteUser(result.id)">DELETE</span>
+                    </p>
+                </div>
+                <input type="text" v-model="name" placeholder="Jane Doe"/>
+                <input type="text" v-model="course" placeholder="Math"/>updateStudent
+                <button @click="addStudent">Add Student</button>
+                <ul style="color: red;" v-for="(error, index) in errors">
+                    <li>{{ error.type }}</li>UPDATE
+            </div>
+        </div>
+        <script>
+            new Vue({
+                el:'#root',
+                data:{
+                    url:'http://127.0.0.1:8081/api/students',
+                    name:'Gabriel Sumers',
+                    results:[],
+                    name:'',
+                    course:'',
+                    updatedName:'',
+                    updatedCourse:'',
+                    updatedId:'',
+                    errors:[],
+                    isVisible:false,
+                    showResults:true
+                },
+                methods:{
+                    changeStudent(){
+                        this.update(this.results[this.updatedId].id)
+                        // console.log('We are going to change a students details '+ this.results[this.updatedId].id)
+                    },
+                    addStudent(){
+                        //clear previous list
+                        this.errors = [];
+                        if(this.name == '')    {
+                            this.errors.push({type:'Name cannot be blank'})
+                        }
+                        else if(this.course == '')    {
+                            this.errors.push({type:'Course cannot be blank'})
+                        }
+                        else {
+                            this.persistStudent(this.name,this.course)
+                            // this.showStudents()
+                        }
+                    },
+                    deleteUser(index) {
+                        this.deleteStudent(index)
+                    },
+                    async update(index) {
+                        // console.log(index)
+                        await axios.put('http://127.0.0.1:8081/api/students/'+index,{
+                            name:this.updatedName,
+                            course:this.updatedCourse
+                        })
+                        .then(function(response)    {
+                            console.log(response)
+                        })
+                        .catch(function (error) {
+                            console.log(error)
+                        })
+                        this.closeModal()
+                        await axios.get(this.url).then(response =>{
+                        console.log(response)
+                        //close modal
+                        
+                        this.results = response.data
+                        this.course = ''
+                        this.name = ''
+                        })
+                    },
+                    async deleteStudent(index) {
+                        await axios.delete('http://127.0.0.1:8081/api/students',{
+                            data:{
+                                id:index
+                            }
+                        })
+                        .then(function(response)    {
+                            console.log('delete start ')
+                            console.log(response)
+                            console.log('delete end ')
+                        })
+                        .catch(function (error) {
+                            console.log(error)
+                        })
+                        await axios.get(this.url).then(response =>{
+                        console.log('updated response ')
+                        console.log(response)
+                        this.results = response.data
+                        this.course = ''
+                        this.name = ''
+                        })
+                    },
+                    async persistStudent(name,course) {
+                        await axios.post('http://127.0.0.1:8081/api/students',{
+                            name:this.name,
+                            course:this.course
+                        })
+                        .then(function(response)    {
+                            console.log('updated start ')
+                            console.log(response)
+                            console.log('updated end ')
+                        })
+                        .catch(function (error) {
+                            console.log(error)
+                        })
+                        await axios.get(this.url).then(response =>{
+                        console.log('updated response ')
+                        console.log(response)
+                        this.results = response.data
+                        this.course = ''
+                        this.name = ''
+                        })
+                    },
+                    updateUser(index){
+                        //modal is visible
+                        this.isVisible = true
+                        this.showResults = false
+                        this.updatedName = this.results[index].name
+                        this.updatedCourse = this.results[index].course
+                        this.updatedId = index
+                        // updateStudent(index)
+                    },
+                    closeModal(){
+                        this.isVisible = false
+                        this.showResults = true
+                    },
+                },
+                mounted()   {
+                    axios.get(this.url).then(response =>{
+                        console.log(response)
+                        this.results = response.data
+                    })
+                }
+            })
+        </script>
+
+    </body>
+</html>
